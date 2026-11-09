@@ -613,7 +613,7 @@ function showUserGroupManagement(id=null) {
 						'url': sessionVaultContent['passwords'][passwordId].url,
 						'description': sessionVaultContent['passwords'][passwordId].description,
 						'icon': sessionVaultContent['passwords'][passwordId].icon,
-						};
+					};
 					promiseChain.push(
 						encryptData(targetPublicKeys, JSON.stringify(secret), passwordId)
 						.then((result) => {
@@ -946,7 +946,7 @@ function showGroupDetails(id=null) {
 					'url': entriesToUpdate.passwords[passwordId].url,
 					'description': entriesToUpdate.passwords[passwordId].description,
 					'icon': entriesToUpdate.passwords[passwordId].icon,
-					};
+				};
 				promiseChain.push(
 					encryptData(targetPublicKeys, JSON.stringify(secret), passwordId)
 					.then((result) => {
@@ -1158,7 +1158,7 @@ function showPasswordDetails(id=null) {
 			'url': txtUrl.value,
 			'description': txtDescription.value,
 			'icon': sltIcon.value,
-			};
+		};
 
 		// collect selected users and groups and compile target keys
 		let shareUsers = [];
