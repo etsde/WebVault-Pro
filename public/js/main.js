@@ -22,6 +22,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	btnUserGroups.addEventListener('click', () => showUserGroupsManagement());
 	btnImport.addEventListener('click', () => showImport());
 	btnTotp.addEventListener('click', () => showTotp());
+	btnColorScheme.addEventListener('click', () => {
+		let schemes = ['auto', 'light', 'dark'];
+		setSetting('colorScheme', schemes[(schemes.indexOf(getSetting('colorScheme', 'auto')) + 1) % schemes.length]);
+		applyColorScheme();
+	});
+	btnView.addEventListener('click', () => {
+		setSetting('view', (getSetting('view', 'list') == 'list') ? 'tiles' : 'list');
+		applyView();
+	});
+	applyView();
 	btnReload.addEventListener('click', () => {
 		imgReload.classList.add('rotating');
 		divVault.classList.add('loading');
@@ -47,6 +57,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	document.addEventListener('mousedown', () => sessionLastUserActivity = Date.now());
 });
 
+
+// stylesheets are only completely available after loading
+window.addEventListener('load', () => applyColorScheme());
 
 class PrivateKeyDecryptionError extends Error {}
 class TotpRequiredError extends Error {}
@@ -471,6 +484,39 @@ function restoreGroupState() {
 			elements[i].classList.remove('closed');
 		}
 	}
+}
+
+var colorSchemeRules = null;
+function applyColorScheme() {
+	// the dark mode of all stylesheets (incl. custom ones) is defined by media queries, so these are rewritten to force a scheme
+	let scheme = getSetting('colorScheme', 'auto');
+	if(colorSchemeRules === null) {
+		colorSchemeRules = [];
+		let collectRules = function(rules) {
+			for(let rule of rules) {
+				if(rule.styleSheet) collectRules(rule.styleSheet.cssRules); // @import
+				else if(rule.media && rule.media.mediaText.includes('prefers-color-scheme: dark')) colorSchemeRules.push([rule, rule.media.mediaText]);
+			}
+		};
+		for(let sheet of document.styleSheets) {
+			try {
+				collectRules(sheet.cssRules);
+			} catch(e) {} // stylesheet of another origin
+		}
+	}
+	colorSchemeRules.forEach(([rule, mediaText]) => {
+		rule.media.mediaText = (scheme == 'dark') ? 'all' : ((scheme == 'light') ? 'not all' : mediaText);
+	});
+	// also for the SVG icons and form elements of the browser
+	document.documentElement.style.colorScheme = (scheme == 'auto') ? '' : scheme;
+	btnColorScheme.title = strings['color_scheme_'+scheme];
+}
+
+function applyView() {
+	let tiles = (getSetting('view', 'list') == 'tiles');
+	ulEntriesTree.classList.toggle('tiles', tiles);
+	btnView.title = tiles ? strings.view_list : strings.view_tiles;
+	btnView.querySelectorAll('img')[0].src = tiles ? 'img/list.svg' : 'img/tiles.svg';
 }
 
 const STORAGE_KEY_SETTINGS = 'settings';
@@ -1477,7 +1523,9 @@ function showIconPicker(txtIcon, btnIcon, defaultIcon, divParentWindow) {
 			let canvas = document.createElement('CANVAS');
 			canvas.width = 48;
 			canvas.height = 48;
-			canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+			// keep the aspect ratio, center the image
+			let scale = Math.min(canvas.width / (img.width || canvas.width), canvas.height / (img.height || canvas.height));
+			canvas.getContext('2d').drawImage(img, (canvas.width - img.width*scale) / 2, (canvas.height - img.height*scale) / 2, img.width*scale, img.height*scale);
 			URL.revokeObjectURL(img.src);
 			applyIcon(canvas.toDataURL('image/png'));
 		};

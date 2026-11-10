@@ -235,8 +235,14 @@ button[disabled], .button.disabled {
 		margin-top: 1px;
 	}
 }
-#divMoreContainer {
+#btnMoreContainer {
 	position: relative;
+}
+#btnMore {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	box-sizing: border-box;
 }
 #divMore {
 	position: absolute;
@@ -323,6 +329,9 @@ input[type=submit]:not(.nobold) {
 }
 .inputtable.actionbtn tr td:last-child {
 	width: 1%;
+}
+.inputtable.files td {
+	text-align: left;
 }
 .inputtable input:not([type=checkbox]):not([type=radio]),
 .inputtable select, .inputtable button, .inputtable textarea {
@@ -500,8 +509,7 @@ input.invisible, textarea.invisible, select.invisible {
 .icons {
 	display: grid;
 	grid-template-columns: repeat(8, 1fr);
-	max-width: 420px;
-	margin: 0 auto 15px auto;
+	margin-bottom: 15px;
 }
 .icons button {
 	margin: 2px;
@@ -509,6 +517,7 @@ input.invisible, textarea.invisible, select.invisible {
 }
 .icons button img, .btnIcon img {
 	display: block;
+	margin: auto;
 	width: 24px;
 	height: 24px;
 }
@@ -540,6 +549,59 @@ input.invisible, textarea.invisible, select.invisible {
 	height: 18px; width: 18px;
 	vertical-align: bottom;
 	margin-inline-end: 4px;
+}
+
+/* tile view: entries and closed folders as tiles, the contents of an open folder below it */
+#ulEntriesTree.tiles,
+#ulEntriesTree.tiles ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 0px;
+	padding: 0px;
+	border-left: none;
+}
+#ulEntriesTree.tiles ul {
+	padding: 12px 0px 4px 0px;
+}
+#ulEntriesTree.tiles ul:empty {
+	display: none;
+}
+#ulEntriesTree.tiles li.password,
+#ulEntriesTree.tiles li.group {
+	box-sizing: border-box;
+	width: 150px;
+	margin: 0px;
+	padding: 12px;
+	text-align: center;
+	border-radius: 8px;
+	background-color: rgba(128,128,128,0.08);
+}
+#ulEntriesTree.tiles li.group:not(.closed) {
+	width: 100%;
+	text-align: left;
+}
+#ulEntriesTree.tiles li.password:before,
+#ulEntriesTree.tiles li.group.closed:before,
+#ulEntriesTree.tiles li.password > img.icon,
+#ulEntriesTree.tiles li.group.closed > img.icon {
+	display: block;
+	margin: 4px auto 8px auto;
+	zoom: 1.6;
+}
+#ulEntriesTree.tiles li > div,
+#ulEntriesTree.tiles li.group.closed .groupheader,
+#ulEntriesTree.tiles li.password > div .username {
+	display: block;
+	margin: 0px;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+#ulEntriesTree.tiles li.password .entrydescription,
+#ulEntriesTree.tiles li.group.closed .groupdescription {
+	display: none;
 }
 
 #ulEntriesTree.searchresults li.password,
@@ -657,5 +719,23 @@ input.invisible, textarea.invisible, select.invisible {
 	#divVaultContainer {
 		width: 85%;
 		height: 85%;
+	}
+	/* windows open at the left edge of the vault container, so they may not be wider than it */
+	.box.childWindow {
+		max-width: 85%;
+	}
+	.titlebar > input {
+		margin-right: 8px;
+	}
+	.titlebar > span {
+		flex-grow: 0;
+	}
+	.inputtable th {
+		white-space: normal;
+	}
+	/* selects are as wide as their longest option otherwise */
+	.inputtable select {
+		width: 0px;
+		min-width: 100%;
 	}
 }
