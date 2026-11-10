@@ -136,7 +136,7 @@ class DatabaseController {
 	}
 	public function updateUserTotp($id, $totp_secret, $totp_recovery) {
 		$this->stmt = $this->dbh->prepare(
-			'UPDATE user SET totp_secret = :totp_secret, totp_recovery = :totp_recovery, totp_last_step = NULL WHERE id = :id'
+			'UPDATE user SET totp_secret = :totp_secret, totp_recovery = :totp_recovery, totp_last_step = NULL, totp_failures = 0 WHERE id = :id'
 		);
 		return $this->stmt->execute([
 			':id' => $id,
@@ -146,9 +146,15 @@ class DatabaseController {
 	}
 	public function updateUserTotpLastStep($id, $totp_last_step) {
 		$this->stmt = $this->dbh->prepare(
-			'UPDATE user SET totp_last_step = :totp_last_step WHERE id = :id'
+			'UPDATE user SET totp_last_step = :totp_last_step, totp_failures = 0 WHERE id = :id'
 		);
 		return $this->stmt->execute([':id' => $id, ':totp_last_step' => $totp_last_step]);
+	}
+	public function updateUserTotpFailures($id, $totp_failures, $totp_failed_at) {
+		$this->stmt = $this->dbh->prepare(
+			'UPDATE user SET totp_failures = :totp_failures, totp_failed_at = :totp_failed_at WHERE id = :id'
+		);
+		return $this->stmt->execute([':id' => $id, ':totp_failures' => $totp_failures, ':totp_failed_at' => $totp_failed_at]);
 	}
 	public function deleteUser($id) {
 		$this->stmt = $this->dbh->prepare(
@@ -373,6 +379,28 @@ class DatabaseController {
 		);
 		$this->stmt->execute([':password_group_id' => $password_group_id]);
 		return $this->stmt->fetchAll(PDO::FETCH_CLASS);
+	}
+	public function selectAllPasswordIdByUserGroupShare($user_group_id) {
+		$this->stmt = $this->dbh->prepare(
+			'SELECT password_id FROM share_password_user_group WHERE user_group_id = :user_group_id AND (expires IS NULL OR expires > UTC_TIMESTAMP())'
+		);
+		$this->stmt->execute([':user_group_id' => $user_group_id]);
+		$array = [];
+		foreach($this->stmt->fetchAll(PDO::FETCH_CLASS) as $row) {
+			$array[] = $row->password_id;
+		}
+		return $array;
+	}
+	public function selectAllPasswordGroupIdByUserGroupShare($user_group_id) {
+		$this->stmt = $this->dbh->prepare(
+			'SELECT password_group_id FROM share_password_group_user_group WHERE user_group_id = :user_group_id AND (expires IS NULL OR expires > UTC_TIMESTAMP())'
+		);
+		$this->stmt->execute([':user_group_id' => $user_group_id]);
+		$array = [];
+		foreach($this->stmt->fetchAll(PDO::FETCH_CLASS) as $row) {
+			$array[] = $row->password_group_id;
+		}
+		return $array;
 	}
 	public function selectAllUserByPasswordShare($password_id) {
 		$this->stmt = $this->dbh->prepare(

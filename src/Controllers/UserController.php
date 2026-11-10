@@ -300,8 +300,23 @@ class UserController {
 			}
 
 			// permission check
-			if(!in_array($_SESSION['user_id'], $this->db->selectAllUserIdByUserGroup($id))) {
+			$members = $this->db->selectAllUserIdByUserGroup($id);
+			if(!in_array($_SESSION['user_id'], $members)) {
 				throw new Exception('Permission denied');
+			}
+			// new members get access to everything shared with the group, so this requires resharing permission
+			if(array_diff($json['members'], $members)) {
+				$restricted = VaultController::PERMISSION_READ_ONLY | VaultController::PERMISSION_NO_RESHARE;
+				foreach($this->db->selectAllPasswordIdByUserGroupShare($id) as $password_id) {
+					if($this->db->selectPasswordPermission($password_id, $_SESSION['user_id']) & $restricted) {
+						throw new Exception('Permission denied');
+					}
+				}
+				foreach($this->db->selectAllPasswordGroupIdByUserGroupShare($id) as $password_group_id) {
+					if($this->db->selectPasswordGroupPermission($password_group_id, $_SESSION['user_id']) & $restricted) {
+						throw new Exception('Permission denied');
+					}
+				}
 			}
 
 			// update data
@@ -366,6 +381,12 @@ class UserController {
 
 	/*** Login Functions ***/
 	private function checkTotp($user, $code) {
+		// lock the second factor for 5 minutes after 5 wrong codes, independent of the session
+		$recentFailure = ($user->totp_failed_at > time() - 300);
+		if($recentFailure && $user->totp_failures >= 5) {
+			error_log('user '.$user->username.': second factor locked');
+			return false;
+		}
 		// accept a current one-time code (only once) or one of the recovery codes (removed after use)
 		$step = Totp::verify($user->totp_secret, $code, $user->totp_last_step);
 		if($step !== false) {
@@ -380,6 +401,7 @@ class UserController {
 				return true;
 			}
 		}
+		$this->db->updateUserTotpFailures($user->id, $recentFailure ? $user->totp_failures + 1 : 1, time());
 		error_log('user '.$user->username.': second factor failure');
 		return false;
 	}
